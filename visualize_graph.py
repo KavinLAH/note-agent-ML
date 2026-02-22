@@ -74,22 +74,21 @@ def visualize(graph: KnowledgeGraph, output_path: str = 'knowledge_graph.png'):
         color = TYPE_COLORS.get(obj_type, '#64748B')
         x, y = pos[node]
 
-        # Wrap text and add type header - truncate if too long for executive view
-        clean_text = raw_text if len(raw_text) < 60 else raw_text[:57] + "..."
-        wrapped = textwrap.fill(clean_text, width=20)
+        # Wrap text and add type header - Show full text for research transparency
+        wrapped = textwrap.fill(raw_text, width=25)
         label = f"[{obj_type.upper()}]\n{wrapped}"
 
         # Use matplotlib's bbox — it auto-sizes perfectly to text
         ax.text(x, y, label,
-            fontsize=12, fontweight='bold', color='#FFFFFF',
+            fontsize=13, fontweight='bold', color='#FFFFFF',
             ha='center', va='center', fontfamily='sans-serif',
             linespacing=1.4, zorder=10,
             bbox=dict(
-                boxstyle='round,pad=0.5',
+                boxstyle='round,pad=0.6',
                 facecolor=color,
                 edgecolor='#FFFFFF',
-                linewidth=1.5,
-                alpha=1.0, # Solid for better contrast
+                linewidth=2.0,
+                alpha=0.9, # Glassmorphism/translucency restored
             ))
 
         node_positions[node] = (x, y)
@@ -120,16 +119,27 @@ def visualize(graph: KnowledgeGraph, output_path: str = 'knowledge_graph.png'):
         if col_dist > 1 and row_dist > 1 and rad == 0:
             rad = 0.25 if col_dist > 8 else 0.15
 
-        # Main arrow - Simple, clean directionality
+        # Arrow with subtle glow effect restored
+        # Glow layer (wider, translucent)
         ax.annotate('',
             xy=(x2, y2), xytext=(x1, y1),
             arrowprops=dict(
-                arrowstyle='-|>', color=ec, lw=1.6, 
-                mutation_scale=25, 
+                arrowstyle='-', color=ec, lw=6, alpha=0.15,
                 connectionstyle=f'arc3,rad={rad}',
-                shrinkA=50, 
-                shrinkB=55, 
-                alpha=0.65,
+                shrinkA=45, shrinkB=45,
+            ),
+            zorder=4)
+
+        # Main arrow - increased mutation_scale for massive arrowheads
+        ax.annotate('',
+            xy=(x2, y2), xytext=(x1, y1),
+            arrowprops=dict(
+                arrowstyle='-|>', color=ec, lw=2.2, 
+                mutation_scale=30, 
+                connectionstyle=f'arc3,rad={rad}',
+                shrinkA=45, 
+                shrinkB=50, 
+                alpha=0.9, 
             ),
             zorder=5)
         
@@ -157,14 +167,14 @@ def visualize(graph: KnowledgeGraph, output_path: str = 'knowledge_graph.png'):
         by += py * nudge_sign * nudge_dist
 
         # Background pill + text
-        ax.text(bx, by, f' {lt} ',
-            fontsize=9, color='#FFFFFF', fontweight='bold',
+        ax.text(bx, by, f'  {lt}  ',
+            fontsize=10, color='#FFFFFF', fontweight='bold',
             ha='center', va='center', fontfamily='sans-serif',
             zorder=12,
             bbox=dict(
-                boxstyle='round,pad=0.2',
+                boxstyle='round,pad=0.25',
                 facecolor=ec, edgecolor='#FFFFFF',
-                linewidth=0.8,
+                linewidth=1.0,
                 alpha=1.0, 
             ))
 
@@ -217,8 +227,8 @@ def _presentation_layout(G):
         chains.append(remaining)
 
     pos = {}
-    col_spacing = 11.0
-    row_spacing = 7.0
+    col_spacing = 7.5
+    row_spacing = 5.0
     total_width = (len(chains) - 1) * col_spacing
     start_x = -total_width / 2
 
