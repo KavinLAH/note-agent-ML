@@ -439,7 +439,12 @@ Return JSON:
   ]
 }}
 
-Be exhaustive but precise. Only include relationships where there is a clear semantic connection supported by the text."""
+Be exhaustive and highly perceptive. Look for:
+1. PREREQUISITES: Does X need Y to happen first? (DependsOn)
+2. CONFLICTS: Does X imply Y is not true or redundant? (Contradicts)
+3. DETAILS: Does X provide a specific number, name, or date for Y? (Refines)
+
+Only include relationships where there is a clear semantic connection supported by the text."""
 
         try:
             response = self.client.chat.completions.create(

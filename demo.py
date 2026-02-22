@@ -13,6 +13,7 @@ from ml.extraction import LLMExtractor
 from ml.graph import KnowledgeGraph
 from ml.search import HybridSearchEngine
 from ml.intelligence import IntelligenceLayer
+from visualize_graph import visualize
 
 def main():
     print("\n" + "="*60)
@@ -132,6 +133,17 @@ Open questions:
     for insight in intelligence_insights:
         print(f"   -> [INSIGHT] {insight['type']}: {insight['text']} ({insight['message']})")
     
+    # 9. Visualization
+    print(f"\n[STEP 8] KNOWLEDGE GRAPH VISUALIZATION (Generating PNG)")
+    output_png = "knowledge_graph.png"
+    visualize(graph, output_png)
+    
+    # Auto-open on macOS
+    import platform
+    if platform.system() == "Darwin":
+        print(f"   -> Opening {output_png}...")
+        os.system(f"open {output_png}")
+
     print("\n" + "="*60 + "\n")
 
 if __name__ == "__main__":

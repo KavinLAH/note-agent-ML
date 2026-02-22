@@ -74,21 +74,22 @@ def visualize(graph: KnowledgeGraph, output_path: str = 'knowledge_graph.png'):
         color = TYPE_COLORS.get(obj_type, '#64748B')
         x, y = pos[node]
 
-        # Wrap text and add type header
-        wrapped = textwrap.fill(raw_text, width=25)
-        label = f"[{obj_type}]\n{wrapped}"
+        # Wrap text and add type header - truncate if too long for executive view
+        clean_text = raw_text if len(raw_text) < 60 else raw_text[:57] + "..."
+        wrapped = textwrap.fill(clean_text, width=20)
+        label = f"[{obj_type.upper()}]\n{wrapped}"
 
         # Use matplotlib's bbox — it auto-sizes perfectly to text
         ax.text(x, y, label,
-            fontsize=13, fontweight='bold', color='#FFFFFF',
+            fontsize=12, fontweight='bold', color='#FFFFFF',
             ha='center', va='center', fontfamily='sans-serif',
-            linespacing=1.5, zorder=10,
+            linespacing=1.4, zorder=10,
             bbox=dict(
-                boxstyle='round,pad=0.6',
+                boxstyle='round,pad=0.5',
                 facecolor=color,
                 edgecolor='#FFFFFF',
-                linewidth=2.5,
-                alpha=0.92,
+                linewidth=1.5,
+                alpha=1.0, # Solid for better contrast
             ))
 
         node_positions[node] = (x, y)
@@ -110,7 +111,8 @@ def visualize(graph: KnowledgeGraph, output_path: str = 'knowledge_graph.png'):
             rad = 0.0
         else:
             sign = 1 if idx % 2 == 1 else -1
-            rad = sign * (0.35 + 0.2 * ((idx - 1) // 2))
+            # Increased base curvature for better separation of duplicate lines
+            rad = sign * (0.45 + 0.25 * ((idx - 1) // 2))
 
         # Cross-column edges: gentle curve to avoid crossing nodes
         col_dist = abs(x1 - x2)
@@ -118,55 +120,52 @@ def visualize(graph: KnowledgeGraph, output_path: str = 'knowledge_graph.png'):
         if col_dist > 1 and row_dist > 1 and rad == 0:
             rad = 0.25 if col_dist > 8 else 0.15
 
-        # Arrow with subtle glow effect
-        # Glow layer (wider, translucent)
+        # Main arrow - Simple, clean directionality
         ax.annotate('',
             xy=(x2, y2), xytext=(x1, y1),
             arrowprops=dict(
-                arrowstyle='-', color=ec, lw=5, alpha=0.15,
+                arrowstyle='-|>', color=ec, lw=1.6, 
+                mutation_scale=25, 
                 connectionstyle=f'arc3,rad={rad}',
-                shrinkA=35, shrinkB=35,
-            ),
-            zorder=4)
-        # Main arrow
-        ax.annotate('',
-            xy=(x2, y2), xytext=(x1, y1),
-            arrowprops=dict(
-                arrowstyle='-|>', color=ec, lw=2.5,
-                mutation_scale=22,
-                connectionstyle=f'arc3,rad={rad}',
-                shrinkA=35, shrinkB=35,
+                shrinkA=50, 
+                shrinkB=55, 
+                alpha=0.65,
             ),
             zorder=5)
-
+        
         # ── Edge label ON the Bézier curve with background pill ──
-        # matplotlib arc3 control point: mid + rad*(dy, -dx)
         midx, midy = (x1 + x2) / 2, (y1 + y2) / 2
         dx, dy = x2 - x1, y2 - y1
         cx = midx + rad * dy
         cy = midy - rad * dx
-        # Stagger label position for duplicates so they don't overlap
-        t = 0.35 + idx * 0.15  # 0.35, 0.50, 0.65, ...
-        t = min(t, 0.7)        # cap so labels stay away from target node
+        
+        # t=0.5 is the exact center of the curve.
+        # For long executive-spaced lines, staying centered is clearest.
+        t = 0.5
+            
         bx = (1-t)**2 * x1 + 2*(1-t)*t * cx + t**2 * x2
         by = (1-t)**2 * y1 + 2*(1-t)*t * cy + t**2 * y2
 
-        # Small nudge away from the curve for readability
+        # Small nudge to place label ABOVE the curve rather than ON it
         length = max((dx**2 + dy**2) ** 0.5, 0.001)
         px, py = -dy / length, dx / length
+        nudge_dist = 0.5  # Fixed distance from the line
+        
+        # Ensure nudge is always "outward" from the center of curvature
         nudge_sign = 1 if rad >= 0 else -1
-        bx += px * nudge_sign * 0.35
-        by += py * nudge_sign * 0.35
+        bx += px * nudge_sign * nudge_dist
+        by += py * nudge_sign * nudge_dist
 
         # Background pill + text
-        ax.text(bx, by, f'  {lt}  ',
-            fontsize=10, color='#FFFFFF', fontweight='bold',
+        ax.text(bx, by, f' {lt} ',
+            fontsize=9, color='#FFFFFF', fontweight='bold',
             ha='center', va='center', fontfamily='sans-serif',
-            zorder=7,
+            zorder=12,
             bbox=dict(
-                boxstyle='round,pad=0.25',
-                facecolor=ec, edgecolor='none',
-                alpha=0.85,
+                boxstyle='round,pad=0.2',
+                facecolor=ec, edgecolor='#FFFFFF',
+                linewidth=0.8,
+                alpha=1.0, 
             ))
 
     # ── Title ──
@@ -218,8 +217,8 @@ def _presentation_layout(G):
         chains.append(remaining)
 
     pos = {}
-    col_spacing = 7.0
-    row_spacing = 4.0
+    col_spacing = 11.0
+    row_spacing = 7.0
     total_width = (len(chains) - 1) * col_spacing
     start_x = -total_width / 2
 
